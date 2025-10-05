@@ -9,6 +9,10 @@ while [ $# -gt 0 ]; do
         echo "Usage: $0"
         shift
         ;;
+    --headless)
+        CMDLINE="$CMDLINE -nographic"
+        shift
+        ;;
     --gtk)
         CMDLINE="$CMDLINE --display gtk,grab-on-hover=on"
         CMDLINE="$CMDLINE -vga virtio"
@@ -85,6 +89,6 @@ if [ "$ENABLE_USB" = true ]; then
     CMDLINE="-device qemu-xhci $CMDLINE"
 fi
 
-CMDLINE="$QEMU_COMMAND -nodefaults -monitor stdio -machine pc-q35-8.2,acpi=on -accel kvm $CMDLINE"
+CMDLINE="$QEMU_COMMAND -machine pc-q35-8.2,acpi=on -accel kvm $CMDLINE"
 echo "$CMDLINE"
 $CMDLINE
