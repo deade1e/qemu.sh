@@ -3,6 +3,9 @@
 QEMU_COMMAND="qemu-system-x86_64"
 ENABLE_USB=false
 
+# PCIE_BUS_INDEX
+PBI=1
+
 while [ $# -gt 0 ]; do
     case $1 in
     -h | --help)
@@ -76,6 +79,11 @@ while [ $# -gt 0 ]; do
     --audio-hda)
         CMDLINE="$CMDLINE -audio pipewire,model=hda"
         shift
+        ;;
+    --passthrough)
+        CMDLINE="$CMDLINE -device pcie-root-port,id=rp$PBI,chassis=$PBI,slot=$PBI -device vfio-pci,host=$2,bus=rp$PBI"
+        PBI=$((PBI + 1))
+        shift 2
         ;;
     *)
         CMDLINE="$CMDLINE $1"
