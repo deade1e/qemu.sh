@@ -1,5 +1,6 @@
 #!/bin/sh
 
+QEMU_COMMAND="qemu-system-x86_64"
 ENABLE_USB=false
 
 while [ $# -gt 0 ]; do
@@ -46,8 +47,12 @@ while [ $# -gt 0 ]; do
         CMDLINE="$CMDLINE -drive file=$2"
         shift 2
         ;;
-    -n | --nic-user)
+    --nic-virtio)
         CMDLINE="$CMDLINE -nic user,ipv6=off,model=virtio,mac=$2"
+        shift 2
+        ;;
+    --nic-classic)
+        CMDLINE="$CMDLINE -nic user,ipv6=off,mac=$2"
         shift 2
         ;;
     --tablet)
@@ -75,10 +80,11 @@ while [ $# -gt 0 ]; do
     esac
 done
 
+# Putting it before as qemu enrages if we put it after the devices
 if [ "$ENABLE_USB" = true ]; then
-    CMDLINE="$CMDLINE -device qemu-xhci"
+    CMDLINE="-device qemu-xhci $CMDLINE"
 fi
 
-CMDLINE="qemu-system-x86_64 -nodefaults -monitor stdio -machine pc-q35-8.2,acpi=on -accel kvm $CMDLINE"
+CMDLINE="$QEMU_COMMAND -nodefaults -monitor stdio -machine pc-q35-8.2,acpi=on -accel kvm $CMDLINE"
 echo "$CMDLINE"
 $CMDLINE
