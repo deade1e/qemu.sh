@@ -80,10 +80,19 @@ while [ $# -gt 0 ]; do
         CMDLINE="$CMDLINE -audio pipewire,model=hda"
         shift
         ;;
+    # TODO: Merge the twos
     --passthrough)
-        CMDLINE="$CMDLINE -device pcie-root-port,id=rp$PBI,chassis=$PBI,slot=$PBI -device vfio-pci,host=$2,bus=rp$PBI"
+        CMDLINE="$CMDLINE -device pcie-root-port,id=rp$PBI,chassis=$PBI,slot=$PBI"
+        CMDLINE="$CMDLINE -device vfio-pci,host=$2,bus=rp$PBI"
+        # CMDLINE="$CMDLINE -device vfio-pci,host=$2"
         PBI=$((PBI + 1))
         shift 2
+        ;;
+    --passthrough-romfile)
+        CMDLINE="$CMDLINE -device pcie-root-port,id=rp$PBI,chassis=$PBI,slot=$PBI"
+        CMDLINE="$CMDLINE -device vfio-pci,host=$2,bus=rp$PBI,romfile=$3"
+        PBI=$((PBI + 1))
+        shift 3
         ;;
     *)
         CMDLINE="$CMDLINE $1"
