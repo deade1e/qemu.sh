@@ -6,11 +6,61 @@ ENABLE_USB=false
 # PCIE_BUS_INDEX
 PBI=1
 
+usage() {
+    cat << EOF
+Usage: $0 [OPTIONS]
+
+Display Options:
+  --headless              No viewer, serial only (for servers)
+  --gtk                   GTK viewer with VirtIO VGA (for Linux)
+  --spice                 SPICE display with QXL (for Windows)
+
+System Configuration:
+  --memory SIZE           Amount of memory (e.g., 4G, 8192M)
+  --cores NUM             Number of CPU cores
+  --firmware FILE         UEFI firmware file (read-only)
+  --firmware-vars FILE    UEFI variables file (writable)
+
+Storage:
+  --cdrom FILE            Attach CD-ROM image
+  --drive FILE            VirtIO drive
+  --drive-classic FILE    Non-VirtIO drive
+
+Network:
+  --nic-virtio MAC        VirtIO NIC with specified MAC address
+  --nic-classic MAC       Non-VirtIO NIC with specified MAC address
+
+Input Devices:
+  --tablet                Add USB tablet (absolute pointing device)
+
+USB Passthrough:
+  --usb-host VID:PID      Pass host USB device (vendor ID and product ID in hex)
+
+Audio:
+  --audio-virtio          VirtIO audio (for Linux)
+  --audio-hda             HDA audio (for Windows)
+
+PCI Passthrough:
+  --passthrough ADDR      Pass through PCI device at address (e.g., 0000:01:00.0)
+  --passthrough-romfile ADDR FILE
+                          Pass through PCI device with custom ROM file
+
+Other:
+  -h, --help              Show this help message
+  *                       Any unrecognized options are passed to QEMU
+
+Examples:
+  $0 --gtk -m 4G --cores 4 -d disk.qcow2
+  $0 --spice -m 8G --cores 8 --firmware /usr/share/edk2/ovmf/OVMF_CODE.fd \\
+     --firmware-vars vars.fd -d windows.qcow2 --nic-virtio 52:54:00:12:34:56
+EOF
+}
+
 while [ $# -gt 0 ]; do
     case $1 in
     -h | --help)
-        echo "Usage: $0"
-        shift
+        usage
+        exit 0
         ;;
     # No viewer. Just serial. Good for servers.
     --headless)
@@ -46,7 +96,7 @@ while [ $# -gt 0 ]; do
         shift 2
         ;;
     # Amount of memory
-    -m | --memory)
+    --memory)
         CMDLINE="$CMDLINE -m $2"
         shift 2
         ;;
@@ -56,12 +106,12 @@ while [ $# -gt 0 ]; do
         shift 2
         ;;
     # Classic CD-ROM
-    -c | --cdrom)
+    --cdrom)
         CMDLINE="$CMDLINE -drive file=$2,format=raw,media=cdrom"
         shift 2
         ;;
     # VirtIO drive
-    -d | --drive)
+    --drive)
         CMDLINE="$CMDLINE -drive file=$2,if=virtio"
         shift 2
         ;;
@@ -70,12 +120,12 @@ while [ $# -gt 0 ]; do
         CMDLINE="$CMDLINE -drive file=$2"
         shift 2
         ;;
-    # IPv4 NIC virtio
+    # VirtIO IPv4 NIC
     --nic-virtio)
         CMDLINE="$CMDLINE -nic user,ipv6=off,model=virtio,mac=$2"
         shift 2
         ;;
-    # IPv4 NIC non-virtio
+    # Non VirtIO IPv4 NIC
     --nic-classic)
         CMDLINE="$CMDLINE -nic user,ipv6=off,mac=$2"
         shift 2
@@ -88,11 +138,13 @@ while [ $# -gt 0 ]; do
         ;;
     # Pass host USB to the VM.
     --usb-host)
-        CMDLINE="$CMDLINE -device usb-host,vendorid=0x$2,productid=0x$3"
+        VID=$(echo "$2" | cut -d: -f1)
+        PID=$(echo "$2" | cut -d: -f2)
+        CMDLINE="$CMDLINE -device usb-host,vendorid=0x$VID,productid=0x$PID"
         ENABLE_USB=true
-        shift 3
-        ;;
-    # Virtio Audio. Mainly used for Linux.
+        shift 2
+    ;;
+    # VirtIO Audio. Mainly used for Linux.
     --audio-virtio)
         CMDLINE="$CMDLINE -audio pipewire,model=virtio"
         shift
@@ -102,6 +154,7 @@ while [ $# -gt 0 ]; do
         CMDLINE="$CMDLINE -audio pipewire,model=hda"
         shift
         ;;
+    # Passthrough PCI devices
     --passthrough*)
         # Create PCI-e port
         CMDLINE="$CMDLINE -device pcie-root-port,id=rp$PBI,chassis=$PBI,slot=$PBI"
