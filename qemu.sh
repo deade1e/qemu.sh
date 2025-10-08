@@ -87,7 +87,9 @@ while [ $# -gt 0 ]; do
         CMDLINE="$CMDLINE -device qxl-vga,vgamem_mb=128"
         shift
         ;;
-    ## --firmware and --firmware-vars are used for UEFI
+    # --firmware and --firmware-vars are used for UEFI
+    # Usually --firmware OVMF_CODE.fd or OVMF_CODE.secboot.fd and
+    # --firmware-vars OVMF_VARS.fd or OVMF_VARS.secboot.fd
     --firmware*)
         CMDLINE="$CMDLINE -drive if=pflash,format=raw,file=$2"
         if [ "$1" != "--firmware-vars" ]; then
@@ -165,7 +167,7 @@ while [ $# -gt 0 ]; do
             CMDLINE="$CMDLINE,romfile=$3"
             shift
         fi
-
+        PBI=$((PBI + 1))
         shift 2
         ;;
     # Pass all the remaining commands directly to QEMU
